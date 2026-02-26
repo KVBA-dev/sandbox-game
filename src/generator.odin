@@ -19,13 +19,13 @@ generate_world_layer :: proc(layer: ^WorldLayer) {
 	ctx := ChunkGeneratorContext {
 		layer = layer,
 		coords = make([][2]int, INITIAL_LAYER_SIZE * INITIAL_LAYER_SIZE),
-		noise_scale = 0.25
+		noise_scale = 0.15
 	}
 	defer delete(ctx.coords)
 
 
 	pool: thread.Pool
-	thread.pool_init(&pool, context.allocator, 1)
+	thread.pool_init(&pool, context.allocator, 6)
 	defer thread.pool_destroy(&pool)
 
 	for &c, i in ctx.coords {

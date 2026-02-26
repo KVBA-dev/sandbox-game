@@ -3,7 +3,6 @@ package main
 import rl "vendor:raylib"
 import "core:fmt"
 import "core:mem"
-import la "core:math/linalg"
 
 main :: proc() {
 	when ODIN_DEBUG {
@@ -37,9 +36,7 @@ main :: proc() {
 			mem.tracking_allocator_destroy(&track_alloc)
 		}
 	}
-	else {
-		// rl.SetExitKey(nil)
-	}
+	rl.SetExitKey(nil)
 
 	monitor := rl.GetCurrentMonitor()
 	rl.SetWindowSize(rl.GetMonitorWidth(monitor), rl.GetMonitorHeight(monitor))
@@ -52,64 +49,32 @@ main :: proc() {
 		}
 	}
 
-	camera := rl.Camera2D {
-		zoom = 3,
-		rotation = 0,
-		offset = (rl.Vector2{f32(rl.GetScreenWidth()), f32(rl.GetScreenHeight())} * 0.5),
-		target = {0, 0},
-	}
-
-	world := World {
-		layers = make([]WorldLayer, 1)
-	}
-	generate_world_layer(&world.layers[0])
-	defer destroy_world(&world)
-
-	player := Player{}
-	entities := make([]Entity, MAX_ENTITIES)
-	defer delete(entities)
-
 	running: bool = true
 
+	menu_data: Menu_Data
+
+	set_scene({
+		init = menu_init,
+		update = menu_update,
+		cleanup = menu_cleanup,
+		data = &menu_data,
+	})
+
 	for running {
-		dt := rl.GetFrameTime()
 		if rl.WindowShouldClose() {
 			running = false
 		}
-
-		camera.target = la.lerp(camera.target, player.pos * TILE_SIZE, 5 * dt)
-
-		/*
-		for e in entities {
-			if e.state_machine != {} {
-				e.state_machine.func(e.state_machine.data)
-			}
+		s := current_scene()
+		s.update(s.data)
+		if s.needs_cleanup {
+			s.cleanup(s.data)
 		}
-		*/
-
-		player_movement(&player)
-		rl.BeginDrawing()
-		{
-			rl.ClearBackground(rl.WHITE)
-			rl.BeginMode2D(camera)
-			{
-				world_layer_render(&world.layers[0], &camera)
-				/*
-				for e in entities {
-					if e.renderer != {} {
-						e.renderer.func(e.renderer.data)
-					}
-				}
-				*/
-				player_render(&player)
-			}
-			rl.EndMode2D()
-
-			rl.DrawFPS(10, 10)
-			draw_debug_info()
-			
+		if scene_stack_size == 0 {
+			running = false
 		}
-		rl.EndDrawing()
+		
 	}
-
+	for scene_stack_size > 0 {
+		pop_scene()
+	}
 }

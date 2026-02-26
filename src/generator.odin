@@ -23,7 +23,6 @@ generate_world_layer :: proc(layer: ^WorldLayer) {
 	}
 	defer delete(ctx.coords)
 
-
 	pool: thread.Pool
 	thread.pool_init(&pool, context.allocator, 6)
 	defer thread.pool_destroy(&pool)

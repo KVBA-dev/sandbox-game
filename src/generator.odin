@@ -1,14 +1,16 @@
 package main
 
+import "core:math"
 import "core:thread"
-import rl "vendor:raylib"
 import "core:sync"
+import "core:math/noise"
 
 ChunkGeneratorContext :: struct {
 	layer: ^WorldLayer,
 	coords: [][2]int,
 	chunk_mtx: sync.Mutex,
-	noise_scale: f32,
+	noise_scale: f64,
+	noise_seed: i64,
 }
 
 generate_world_layer :: proc(layer: ^WorldLayer) {
@@ -19,7 +21,8 @@ generate_world_layer :: proc(layer: ^WorldLayer) {
 	ctx := ChunkGeneratorContext {
 		layer = layer,
 		coords = make([][2]int, INITIAL_LAYER_SIZE * INITIAL_LAYER_SIZE),
-		noise_scale = 0.15
+		noise_scale = 0.025,
+		noise_seed = 2
 	}
 	defer delete(ctx.coords)
 
@@ -44,19 +47,18 @@ generate_chunk :: proc(task: thread.Task) {
 		base_tiles = make([]Tile, CHUNK_AREA)
 	}
 
-	noise := rl.GenImagePerlinNoise(
-		CHUNK_LENGTH, 
-		CHUNK_LENGTH, 
-		i32(coords.x * CHUNK_LENGTH), 
-		i32(coords.y * CHUNK_LENGTH), 
-		ctx.noise_scale,
-	)
-	defer rl.UnloadImage(noise)
+
 	for i in 0..<CHUNK_AREA {
 		x := i % CHUNK_LENGTH
 		y := i / CHUNK_LENGTH
 
-		t := f32(rl.GetImageColor(noise, i32(x), i32(y)).x) / 255
+		nx := coords.x * CHUNK_LENGTH + x
+		ny := coords.y * CHUNK_LENGTH + y
+		t := f32(noise.noise_2d(ctx.noise_seed, noise.Vec2{f64(nx), f64(ny)} * ctx.noise_scale)) * 0.5 + 0.5
+		t += f32(noise.noise_2d(ctx.noise_seed, noise.Vec2{f64(nx), f64(ny)} * ctx.noise_scale * 2)) * 0.3
+		t += f32(noise.noise_2d(ctx.noise_seed, noise.Vec2{f64(nx), f64(ny)} * ctx.noise_scale * 4)) * 0.09
+		t = math.clamp(t, 0, 1)
+		t = plateau(t)
 		switch t{
 		case .7..=1:
 			chunk.base_tiles[i] = .Stone
@@ -72,4 +74,8 @@ generate_chunk :: proc(task: thread.Task) {
 		ctx.layer.chunks[coords] = chunk
 	}
 	
+}
+
+plateau :: proc(x: f32) -> f32 {
+	return 4 * math.pow(x - 0.5, 3) + 0.5
 }

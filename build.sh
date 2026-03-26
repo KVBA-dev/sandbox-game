@@ -8,7 +8,6 @@ odin build src \
 	-warnings-as-errors \
 	-disallow-do \
 	-vet-packages:main \
-	-vet-unused-procedures \
 	-vet-unused-variables \
 	-thread-count:4
 if [[ $? -ne 0 ]]; then

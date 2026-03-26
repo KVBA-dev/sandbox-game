@@ -1,4 +1,4 @@
-package main
+package closure
 
 Closure :: struct($T: typeid) {
 	data: T,

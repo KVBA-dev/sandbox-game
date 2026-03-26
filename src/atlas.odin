@@ -4,17 +4,19 @@ import rl "vendor:raylib"
 import "core:fmt"
 import fp "core:path/filepath"
 import "core:strings"
+import "base:intrinsics"
 
 TILE_SIZE :: 16
 
 atlas_registry: [8]rl.Texture
 
-generate_texture_atlas :: proc(base_directory: string, start_offset: Tile) -> rl.Texture {
+generate_texture_atlas :: proc(base_directory: string, start_offset: $T) -> rl.Texture 
+  where intrinsics.type_is_enum(T) {
 	img := rl.GenImageColor(1024, 1024, {})
 	defer rl.UnloadImage(img)
 
 	buf: [256]u8
-	for t in Tile {
+	for t in T {
 		if t < start_offset {
 			continue
 		}

@@ -3,6 +3,7 @@ package main
 import rl "vendor:raylib"
 import "core:fmt"
 import "core:mem"
+import "ui"
 
 main :: proc() {
 	when ODIN_DEBUG {
@@ -12,7 +13,12 @@ main :: proc() {
 		rl.SetTraceLogLevel(.NONE)
 	}
 	rl.InitWindow(800, 600, "Sanbox Game Thing")
-	rl.SetWindowState({.BORDERLESS_WINDOWED_MODE})
+	when ODIN_DEBUG {
+		rl.SetWindowState({.WINDOW_MAXIMIZED, .WINDOW_RESIZABLE})
+	}
+	else {
+		rl.SetWindowState({.BORDERLESS_WINDOWED_MODE})
+	}
 	defer rl.CloseWindow()
 
 	when ODIN_DEBUG {
@@ -42,12 +48,15 @@ main :: proc() {
 	rl.SetWindowSize(rl.GetMonitorWidth(monitor), rl.GetMonitorHeight(monitor))
 	// rl.SetTargetFPS(60)
 
-	atlas_registry[0] = generate_texture_atlas("res/textures", Tile(0))
+	atlas_registry[0] = generate_texture_atlas("res/textures/tiles", Tile(0))
 	defer {
 		for tex in atlas_registry {
 			rl.UnloadTexture(tex)
 		}
 	}
+
+	ui.init()
+	defer ui.destroy()
 
 	running: bool = true
 
@@ -72,6 +81,7 @@ main :: proc() {
 		if scene_stack_size == 0 {
 			running = false
 		}
+		free_all(context.temp_allocator)
 		
 	}
 	for scene_stack_size > 0 {

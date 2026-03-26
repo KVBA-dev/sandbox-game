@@ -1,6 +1,8 @@
 package main
 
-import rl "vendor:raylib"
+import "closure"
+
+Closure :: closure.Closure
 
 MAX_ENTITIES :: 10000
 

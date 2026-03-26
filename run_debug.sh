@@ -7,5 +7,5 @@ odin run src \
 	-warnings-as-errors \
 	-disallow-do \
 	-vet-packages:main \
-	-vet-unused-procedures \
-	-vet-unused-variables
+	-vet-unused-variables \
+	-thread-count:4

@@ -58,6 +58,9 @@ main :: proc() {
 	ui.init()
 	defer ui.destroy()
 
+	init_generator()
+	defer destroy_generator()
+
 	running: bool = true
 
 	menu_data: Menu_Data

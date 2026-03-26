@@ -5,6 +5,7 @@ import "core:thread"
 import "core:sync"
 import "core:math/noise"
 import "perlin"
+import "ranges"
 
 ChunkGeneratorContext :: struct {
 	layer: ^WorldLayer,
@@ -13,6 +14,20 @@ ChunkGeneratorContext :: struct {
 	noise: perlin.Noise,
 	noise_scale: f64,
 	octaves: int,
+}
+
+world_ranges: ranges.Ranges(Tile)
+
+init_generator :: proc() {
+	ranges.init(&world_ranges)
+	ranges.add_lt(&world_ranges, .525, Tile.Water)
+	ranges.add_lt(&world_ranges, .6, Tile.Sand)
+	ranges.add_lt(&world_ranges, .8, Tile.Grass)
+	ranges.add_lt(&world_ranges, 1, Tile.Stone)
+}
+
+destroy_generator :: proc() {
+	ranges.destroy(&world_ranges)
 }
 
 generate_world_layer :: proc(layer: ^WorldLayer) {
@@ -58,16 +73,7 @@ generate_chunk :: proc(task: thread.Task) {
 		ny := coords.y * CHUNK_LENGTH + y
 		t := f32(perlin.noise_vec(&ctx.noise, noise.Vec2{f64(nx), f64(ny)} * ctx.noise_scale, 5))
 		t = math.smoothstep(f32(0), 1, t)
-		switch t{
-		case .8..=1:
-			chunk.base_tiles[i] = .Stone
-		case .6..<.8:
-			chunk.base_tiles[i] = .Grass
-		case .525..<.6:
-			chunk.base_tiles[i] = .Sand
-		case 0..<.525:
-			chunk.base_tiles[i] = .Water
-		}
+		chunk.base_tiles[i] = ranges.eval(&world_ranges, t, Tile.Void)
 	}
 	if sync.mutex_guard(&ctx.chunk_mtx) {
 		ctx.layer.chunks[coords] = chunk
